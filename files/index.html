@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="JustHex" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+    <link rel="stylesheet" href="logic_and_style/index.css" />
+  </head>
+
+  <body>
+    <div class="header">
+      <ul>
+        <li>JustHex</li>
+      </ul>
+
+      <ul class="header_menu">
+        <div class="header_file">
+          <button class="Headerbtn">File</button>
+          <div class="header_content">
+            <input type="file" id="openButton" class="open_button" />
+          </div>
+        </div>
+        <div class="header_edit">
+          <button class="Headerbtn">Edit</button>
+          <div class="header_content">
+            <input type="file" id="openButton" class="open_button" />
+          </div>
+        </div>
+        <div class="header_view">
+          <button class="Headerbtn">View</button>
+          <div class="header_content">
+            <input type="file" id="openButton" class="open_button" />
+          </div>
+        </div>
+      </ul>
+    </div>
+
+    <div class="wrapper">
+      <div class="main_area">
+        <div id="fileContentBkg" contenteditable="true">
+          <ul id="fileContent" class="file_Content"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer"></div>
+    <script src="logic_and_style/index.js"></script>
+  </body>
+</html>
