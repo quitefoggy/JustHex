@@ -1,22 +1,48 @@
 `use strict`
 
-const saveFile = {
+const saveFile = JSON.parse(localStorage.getItem("JustHex_saveFile")) || {
     row_length:16,
     group_size:4
 };
+localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
 
+let byte_buffer = [];
+let is_file_present = false;
 
-
-//let a = 0;
-//let index_array = [];
-//let tile_array = [];
-//let my_tileStorage = {};
+const settings_form = document.getElementById("settingsForm");
 
 const container = document.querySelector(".main_area");
 const fileInput = document.getElementById("openButton");
 const file_contents = document.getElementById("fileContent");
 
+settings_form.addEventListener("submit",updateSettings);
 fileInput.addEventListener("change",handleFile);
+
+function updateSettings(event){
+    event.preventDefault();
+    let rowLength = Number(document.getElementById("rowSize").value);
+    let groupSize = Number(document.getElementById("byteGroupSize").value);
+    //console.log({rowLength, groupSize});
+    if (groupSize<1){
+        groupSize=1;
+        document.getElementById("byteGroupSize").value = String(1);
+    };
+    if (rowLength<1){
+        rowLength=1;
+        document.getElementById("rowSize").value = String(1);
+    };
+    if (rowLength<groupSize){
+        rowLength=groupSize;
+        document.getElementById("rowSize").value = document.getElementById("byteGroupSize").value;
+    }
+    //console.log({rowLength, groupSize});
+    
+    saveFile.row_length = rowLength;
+    saveFile.group_size = groupSize;
+    localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
+
+    if (is_file_present){outputFile(byte_buffer);};
+}
 
 function add_a_space(a_reading_point){
     if ((a_reading_point+1)%4==0){
@@ -35,7 +61,8 @@ function correct_length(input_string){
 }
 
 function outputFile(buffer){
-    const data = new DataView(buffer);
+    file_contents.textContent='';
+    const data = new DataView(buffer) || byte_buffer;
     const iterator = {
         idx:0,
         next(){
@@ -82,13 +109,15 @@ function handleFile(event){
         console.log("No file selected. Please choose a file.");
         return;
     };
+    is_file_present = true; 
     const reader = new FileReader();
     reader.onload = () => {
         //console.log("sent");
         //console.log(reader.result.length);
-        console.log(reader.result.byteLength);
-        console.log(reader.result);
-        file_contents.textContent='';
+        //console.log(reader.result.byteLength);
+        //console.log(reader.result);
+        byte_buffer = reader.result;
+        //console.log(byte_buffer);
         outputFile(reader.result);
         
     };

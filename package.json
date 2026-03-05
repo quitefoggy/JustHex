@@ -1,0 +1,8 @@
+{
+    "author": "quitefoggy",
+    "name": "JustHex",
+    "description": "A hexadecimal editor made in JS",
+    "version": "0.0.2",
+    "main":"files/index.html",
+    "license":"GPL-3.0-or-later"
+}

@@ -109,6 +109,14 @@
   background-color: rgb(0, 102, 80);
 }
 
+.file_ul{
+  display: flex;
+  flex-direction: row;
+}
+.file_li{
+  margin: 0% 1% 0% 1%;
+}
+
 .wrapper {
   margin: 0px 0px;
   padding: 10px 10px;
@@ -142,13 +150,7 @@
   /*transition: all ease-in 0.1s;*/
 }
 
-.file_ul{
-  display: flex;
-  flex-direction: row;
-}
-.file_li{
-  margin: 0% 1% 0% 1%;
-}
+
 
 .right_panel_dead {
   visibility: hidden;

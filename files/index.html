@@ -23,13 +23,25 @@
         <div class="header_edit">
           <button class="Headerbtn">Edit</button>
           <div class="header_content">
-            <input type="file" id="openButton" class="open_button" />
+            <a>To be implemented...</a>
           </div>
         </div>
         <div class="header_view">
           <button class="Headerbtn">View</button>
           <div class="header_content">
-            <input type="file" id="openButton" class="open_button" />
+            <form id="settingsForm">
+              <ul>
+                <li>
+                  <label for="rowSize">Row size:</label>
+                  <input id ="rowSize" type="number">
+                </li>
+                <li>
+                  <label for="byteGroupSize">Byte Group size:</label>
+                  <input id ="byteGroupSize" type="number">
+                </li>
+              </ul>
+              <button type="submit">Save settings</button>
+            </form>
           </div>
         </div>
       </ul>
