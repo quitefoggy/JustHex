@@ -4,5 +4,12 @@
     "description": "A hexadecimal editor made in JS",
     "version": "0.0.2",
     "main":"files/index.html",
-    "license":"GPL-3.0-or-later"
+    "license":"GPL-3.0-or-later",
+    "repository":{
+        "type":"git",
+        "ulr":"https://github.com/quitefoggy/JustHex.git"    
+    },
+    "dependencies":{
+        "a_certain_module_for_saveFile":"modules/a_certain_module_for_saveFile"
+    }
 }
