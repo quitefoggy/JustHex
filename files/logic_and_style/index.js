@@ -11,6 +11,8 @@ let is_file_present = false;
 
 const fileInput = document.getElementById("openButton");
 const settings_form = document.getElementById("settingsForm");
+document.getElementById("rowSize").value = String(saveFile.row_length);
+document.getElementById("byteGroupSize").value = String(saveFile.group_size);
 
 const container = document.querySelector(".wrapper");
 const fileSelector = document.getElementById("opened_files_list");
@@ -121,10 +123,51 @@ function updateSettings(event){
     saveFile.group_size = groupSize;
     localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
 
+    let all_files = Array.from(document.getElementsByClassName("file_Content_Bkg_ul"));
+    for (file_ul of all_files){
+        let byte_cont = String(file_ul.getElementsByTagName("fileContent_byte")[0].innerText).replace(/\n/g,'');
+        let text_cont = String(file_ul.getElementsByTagName("fileContent_text")[0].innerText).replace(/\n/g,'');
+        //console.log(byte_cont);
+        //console.log(text_cont);
+        console.log(byte_cont.length/2, text_cont.length)
+        
+        file_ul.textContent="";
+        let file_contents_byte = document.createElement("fileContent_byte");
+        file_contents_byte.className = "file_Content";
+        file_contents_byte.contentEditable = "true";
+        let file_contents_text = document.createElement("fileContent_text");
+        file_contents_text.className = "file_Content";
+        file_contents_text.contentEditable = "true";
 
 
-    // REDO THIS PART!!!!!!
-    if (is_file_present){outputFile(byte_buffer);};
+        let row_array_byte = [];
+        let row_array_text = [];
+        let li_array = [];
+        for (let i = 0; i<byte_cont.length; i=i+2){
+            console.log(i,i+1,i/2);
+            if ((i/2) % saveFile.row_length ==0){
+                let ul_byte = document.createElement("ul"); //рядок байтів
+                let ul_text = document.createElement("ul"); //рядок тексту
+                ul_byte.className = "file_ul";
+                row_array_byte.push(ul_byte);
+                row_array_text.push(ul_text);
+            };
+            if ((i/2) % saveFile.group_size ==0){
+                let li = document.createElement("li"); //елемент рядка
+                li.className = "file_li";
+                row_array_byte[row_array_byte.length-1].appendChild(li);
+                li_array.push(li);
+            };
+            //console.log(byte,parseInt(byte,16));
+            row_array_text[row_array_text.length-1].textContent+=text_cont[i/2];
+            li_array[li_array.length-1].textContent+=byte_cont[i]+byte_cont[i+1];
+            file_contents_byte.appendChild(row_array_byte[row_array_byte.length-1]);
+            file_contents_text.appendChild(row_array_text[row_array_text.length-1]);
+        };
+        file_ul.appendChild(file_contents_byte);
+        file_ul.appendChild(file_contents_text);
+        console.log('------------ next file ------------')
+    }
 }
 
 
@@ -137,12 +180,13 @@ function correct_length(input_string){
 }
 
 function outputFile(buffer, place){
+    place.textContent='';
     const file_contents_byte = document.createElement("fileContent_byte");
     file_contents_byte.className = "file_Content";
-    file_contents_byte.contentEditable = "true";
+    file_contents_byte.contentEditable = "plaintext-only";
     const file_contents_text = document.createElement("fileContent_text");
     file_contents_text.className = "file_Content";
-    file_contents_text.contentEditable = "true";
+    file_contents_text.contentEditable = "plaintext-only";
 
     const data = new DataView(buffer) || byte_buffer;
     const iterator = {
@@ -183,13 +227,20 @@ function outputFile(buffer, place){
             li_array.push(li);
         };
         //console.log(byte,parseInt(byte,16));
-        row_array_text[row_array_text.length-1].textContent+=String.fromCharCode(parseInt(byte,16));
+        let converted_text = "";
+        if (byte!="0A"){
+            converted_text = String.fromCharCode(parseInt(byte,16));
+        } else {
+            converted_text = ".";
+        }
+        row_array_text[row_array_text.length-1].textContent+=converted_text;
         li_array[li_array.length-1].textContent+=byte;
         file_contents_byte.appendChild(row_array_byte[row_array_byte.length-1]);
         file_contents_text.appendChild(row_array_text[row_array_text.length-1]);
-        place.appendChild(file_contents_byte);
-        place.appendChild(file_contents_text);
-    }
+    };
+
+    place.appendChild(file_contents_byte);
+    place.appendChild(file_contents_text);
 }
 
 function* file_id_generator(){
@@ -214,27 +265,31 @@ function add_My_Events(){
 }
 
 
-function convert_list_into_queue(input_list){
+function convert_list_into_queue(item_list){
     const out_queue = new Queue();
-    for (item in input_list.keys()){
-        console.log(input_list[item]);
+    for (item of item_list){
+        console.log(`item: ${item}`);
         out_queue.push(item);
-    }
+    };
+    console.log(out_queue);
     return out_queue;
 }
 
 function handleFile(event){
     const file_List = event.target.files;
-    console.log(file_List);
-    const file_queue = convert_list_into_queue(file_List);
-    for (let i=0; i<file_queue.length; i++){
+    //console.log(file_List);
+    const file_queue = convert_list_into_queue(event.target.files);
+    //console.log(file_queue.first);
+    let input_que_length = file_queue.length;
+
+    for (let i=0; i<input_que_length; i++){
         const a_file = file_queue.shift();
-        console.log(a_file);
-        console.log(a_file.name);
+        //console.log(a_file);
+        //console.log(a_file.name);
         let filename = a_file.name;
-        console.log(filename);
+        //console.log(filename);
         file_ids[filename] = id_gen.next().value;
-        console.log(file_ids[filename]);
+        //console.log(file_ids[filename]);
 
         let file_div = document.createElement("div");
         file_div.className = "dropdown";                //used to position insides
