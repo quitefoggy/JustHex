@@ -1,19 +1,102 @@
 `use strict`
 
-
+const saveFile = JSON.parse(localStorage.getItem("JustHex_saveFile")) || {
+    row_length:16,
+    group_size:4
+};
 localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
 
-let byte_buffer = [];
+let file_ids = {};
 let is_file_present = false;
 
+const fileInput = document.getElementById("openButton");
 const settings_form = document.getElementById("settingsForm");
 
-const container = document.querySelector(".main_area");
-const fileInput = document.getElementById("openButton");
-const file_contents = document.getElementById("fileContent");
+const container = document.querySelector(".wrapper");
+const fileSelector = document.getElementById("opened_files_list");
 
 settings_form.addEventListener("submit",updateSettings);
 fileInput.addEventListener("change",handleFile);
+
+class Queue {
+    constructor(){
+        this.first = null;
+        this.last = null;
+        this.length = 0;
+    }
+
+    //insert from the top
+    push(item){
+        if (this.length>=128) return item;
+        const last = this.last;
+        const element = {prev:last, next:null, item};
+        if(last) last.next = element;
+        else this.first = element;
+        this.last = element;
+        this.length+=1;
+    }
+
+    //pick from the top
+    pop(){
+        const element = this.last;
+        if(!element) return null;
+        if (this.first === element){
+            this.first = null;
+            this.last = null;
+        } else{
+            this.last = element.prev;
+            this.last.next = null;
+        }
+        this.length-=1;
+        return element.item;
+    }
+
+    //fall from bottom
+    shift(){
+        const element = this.first;
+        if (!element) return null;
+        if (this.last === element){
+            this.first = null;
+            this.last = null;
+        } else {
+            this.first = element.next;
+            this.first.prev = null;
+        }
+        this.length-=1;
+        return element.item;
+    }
+
+    //insert from bottom
+    unshit(item){
+        if (this.length>=128) return item;
+        const first = this.first;
+        const element = {prev:null, next:first, item};
+        if(first) first.prev = element;
+        else this.last = element;
+        this.first = element;
+        this.length+=1;
+    }
+
+    //{prev:last, next:{prev:last, next:{prev:last, next:null, item}, item}, item}
+
+    //ISN'T (and won't be) FINISHED
+    //enqueue(item, priority, element){
+    //    priority = Number(priority);
+    //    while(priority>0){
+    //        let element = this.first;
+    //        if (element){
+    //            let the_next = element.next;
+    //            if (the_next){
+    //                priority-=1;
+    //                this.enqueue(item, priority, element);
+    //            } else{
+    //                let result = this.unshit(item);
+    //                if (result) return new Error("Queue is full")
+    //            }
+    //        } else this.unshit(item);
+    //    }
+    //}
+}
 
 function updateSettings(event){
     event.preventDefault();
@@ -38,16 +121,12 @@ function updateSettings(event){
     saveFile.group_size = groupSize;
     localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
 
+
+
+    // REDO THIS PART!!!!!!
     if (is_file_present){outputFile(byte_buffer);};
 }
 
-function add_a_space(a_reading_point){
-    if ((a_reading_point+1)%4==0){
-        return " "
-    } else {
-        return ""
-    }
-}
 
 function correct_length(input_string){
     if (input_string.length==1){
@@ -57,8 +136,14 @@ function correct_length(input_string){
     }
 }
 
-function outputFile(buffer){
-    file_contents.textContent='';
+function outputFile(buffer, place){
+    const file_contents_byte = document.createElement("fileContent_byte");
+    file_contents_byte.className = "file_Content";
+    file_contents_byte.contentEditable = "true";
+    const file_contents_text = document.createElement("fileContent_text");
+    file_contents_text.className = "file_Content";
+    file_contents_text.contentEditable = "true";
+
     const data = new DataView(buffer) || byte_buffer;
     const iterator = {
         idx:0,
@@ -80,107 +165,118 @@ function outputFile(buffer){
         }
     };
 
-    let row_array = [];
+    let row_array_byte = [];
+    let row_array_text = [];
     let li_array = [];
     for (const {idx,byte} of iterator){
-        //console.log(a_part_of_data);
         if (idx % saveFile.row_length ==0){
-            let ul = document.createElement("ul"); //рядок
-            ul.className = "file_ul";
-            row_array.push(ul);
+            let ul_byte = document.createElement("ul"); //рядок байтів
+            let ul_text = document.createElement("ul"); //рядок тексту
+            ul_byte.className = "file_ul";
+            row_array_byte.push(ul_byte);
+            row_array_text.push(ul_text);
         };
         if (idx % saveFile.group_size ==0){
             let li = document.createElement("li"); //елемент рядка
             li.className = "file_li";
-            row_array[row_array.length-1].appendChild(li);
+            row_array_byte[row_array_byte.length-1].appendChild(li);
             li_array.push(li);
         };
+        //console.log(byte,parseInt(byte,16));
+        row_array_text[row_array_text.length-1].textContent+=String.fromCharCode(parseInt(byte,16));
         li_array[li_array.length-1].textContent+=byte;
-        file_contents.appendChild(row_array[row_array.length-1]);
+        file_contents_byte.appendChild(row_array_byte[row_array_byte.length-1]);
+        file_contents_text.appendChild(row_array_text[row_array_text.length-1]);
+        place.appendChild(file_contents_byte);
+        place.appendChild(file_contents_text);
     }
+}
+
+function* file_id_generator(){
+    let index = 0;
+    while (true){
+        yield "file"+(index++);
+    }
+}
+const id_gen = file_id_generator();
+
+function window_toggle(file_ID){
+    document.getElementById(file_ID).classList.toggle("show");
+}
+
+function add_My_Events(){
+    for (my_key in file_ids){
+        if (file_ids.hasOwnProperty(my_key)){
+            let my_val = file_ids[my_key];
+            document.getElementById(my_val+"_btn").addEventListener("click",window_toggle(file_ids[my_key]));
+        }
+    }
+}
+
+
+function convert_list_into_queue(input_list){
+    const out_queue = new Queue();
+    for (item in input_list.keys()){
+        console.log(input_list[item]);
+        out_queue.push(item);
+    }
+    return out_queue;
 }
 
 function handleFile(event){
-    const file = event.target.files[0];
-    if (!file) {
-        console.log("No file selected. Please choose a file.");
-        return;
-    };
-    is_file_present = true; 
-    const reader = new FileReader();
-    reader.onload = () => {
-        //console.log("sent");
-        //console.log(reader.result.length);
-        //console.log(reader.result.byteLength);
-        //console.log(reader.result);
-        byte_buffer = reader.result;
-        //console.log(byte_buffer);
-        outputFile(reader.result);
-        
-    };
-    reader.onerror = () => {
-        console.log("Error reading the file. Please try again.");
-    };
-    reader.readAsArrayBuffer(file);
+    const file_List = event.target.files;
+    console.log(file_List);
+    const file_queue = convert_list_into_queue(file_List);
+    for (let i=0; i<file_queue.length; i++){
+        const a_file = file_queue.shift();
+        console.log(a_file);
+        console.log(a_file.name);
+        let filename = a_file.name;
+        console.log(filename);
+        file_ids[filename] = id_gen.next().value;
+        console.log(file_ids[filename]);
+
+        let file_div = document.createElement("div");
+        file_div.className = "dropdown";                //used to position insides
+
+        let cur_file_btn = document.createElement("button");
+        cur_file_btn.textContent = filename;
+        cur_file_btn.className = "Headerbtn file_list_button";
+        cur_file_btn.id = file_ids[filename]+"_btn";
+        cur_file_btn.setAttribute("onclick",`window_toggle('${file_ids[filename]}')`);
+        //console.log(cur_file_btn.onclick);
+
+        let cur_file_div = document.createElement("div");
+        cur_file_div.className = "file_Content_Bkg main_area";    //thing that will get hidden
+        cur_file_div.id = file_ids[filename];
+
+        let cur_file_ul = document.createElement("ul");
+        cur_file_ul.className = "file_Content_Bkg_ul";
+        cur_file_div.appendChild(cur_file_ul);
+
+        file_div.appendChild(cur_file_btn);
+        container.appendChild(cur_file_div);
+
+        fileSelector.appendChild(file_div); 
+
+        is_file_present = true; 
+        const reader = new FileReader();
+        reader.onload = () => {
+            //console.log("sent");
+            //console.log(reader.result.length);
+            //console.log(reader.result.byteLength);
+            //console.log(reader.result);
+            //console.log(byte_buffer);
+            outputFile(reader.result, cur_file_ul);
+        };
+        reader.onerror = () => {
+            console.log("Error reading the file. Please try again.");
+        };
+        reader.readAsArrayBuffer(a_file);
+    }
+    //add_My_Events();
 }
 
-
-
-/*
-function add_a_quiz(){
-    
-    if(localStorage.length===0){
-        localStorage.setItem(a, a+20);
-        let tile = document.createElement("div");
-        tile.className = "tile";
-        container.appendChild(tile);
-        index_array.push(String(String(localStorage.key(a))+" "+String(localStorage.getItem(localStorage.key(a)))));
-        tile_array.push(tile);
-        console.log(index_array);
-        //console.log(tile_array);
-        console.log(localStorage)
-        a++;
-    } else if (localStorage.length>0){
-        for (let i = 0;i<index_array.length; i++){
-            console.log(index_array)
-            console.log(localStorage)
-            let temp_array = String(String(localStorage.key(i))+" "+String(localStorage.getItem(localStorage.key(i))))
-            if (index_array.indexOf(temp_array)===-1){
-                index_array.push(temp_array);
-                console.log("check1")
-            }
-            console.log("")
-        }
-        if (!localStorage.key(a)){
-            console.log("check2")
-            localStorage.setItem(a, a+20);
-            let tile = document.createElement("div");
-            tile.className = "tile";
-            container.appendChild(tile);
-            tile_array.push(tile);
-            a++;
-        }
-        console.log(index_array);
-        console.log(localStorage)
-    };
-};
-function delete_a_quiz(){
-    if (localStorage.length>0){
-        console.log(index_array);
-        console.log(index_array[index_array.length-1]);
-        console.log(localStorage.length)
-        container.removeChild(tile_array[index_array.length-1]);
-        localStorage.removeItem(String(index_array[index_array.length-1]).split(" ")[0]);
-        console.log(localStorage)
-        tile_array.pop();
-        index_array.pop();
-        console.log("check3")
-        if (!a<=0){
-            a--;
-        }
-    }
-};
-*/
 function clear_my_localStorage(){
     localStorage.clear();
 }

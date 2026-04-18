@@ -1,0 +1,9 @@
+{
+    "type":"modules",
+    "author": "quitefoggy",
+    "name": "a_certain_module_for_saveFile",
+    "description": "",
+    "version": "0.0.1",
+    "main":"saveFile_operation.mjs",
+    "license":"GPL-3.0-or-later"
+}

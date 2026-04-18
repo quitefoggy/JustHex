@@ -10,6 +10,6 @@
         "ulr":"https://github.com/quitefoggy/JustHex.git"    
     },
     "dependencies":{
-        "a_certain_module_for_saveFile":"modules/a_certain_module_for_saveFile"
+        "a_certain_module_for_saveFile":"0.0.1"
     }
 }

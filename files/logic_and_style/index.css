@@ -57,7 +57,7 @@
   background-color: hsl(0, 0%, 30%);
   min-width: 220px;
   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
+  z-index: 2;
 }
 
 .header_content input {
@@ -109,26 +109,28 @@
   background-color: rgb(0, 102, 80);
 }
 
-.file_ul{
-  display: flex;
-  flex-direction: row;
-}
-.file_li{
-  margin: 0% 1% 0% 1%;
-}
+
 
 .wrapper {
   margin: 0px 0px;
-  padding: 10px 10px;
+  padding: 0px 0px;
   background-color:hsl(0, 0%, 25%);
   border-radius: 0rem;
   height: 100vw;
 
   display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content:left;
+
+}
+
+#opened_files_list {
+  width: max-content;
+  display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content:center;
-
+  justify-content:left;
 }
 
 .main_area {
@@ -150,7 +152,42 @@
   /*transition: all ease-in 0.1s;*/
 }
 
+.file_Content_Bkg{
+  display: none;
+  position: static;
+  /*background-color: #f1f1f1;*/
+  min-width: 160px;
+  /*box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);*/
+  z-index: 1;
+}
 
+.file_Content_Bkg_ul{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.file_Content{
+  padding: 0px 30px 0px 0px;
+}
+
+.file_ul{
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+}
+.file_li{
+  margin: 0% 1% 0% 1%;
+}
+
+.file_list_button{
+  width:fit-content;
+}
+
+.show{
+  display:block;
+}
 
 .right_panel_dead {
   visibility: hidden;
