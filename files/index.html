@@ -23,7 +23,18 @@
         <div class="header_edit">
           <button class="Headerbtn">Edit</button>
           <div class="header_content">
-            <a>To be implemented...</a>
+            <form id="searchForm">
+              <fieldset id="searchFormFieldset">
+                <legend>Choose file</legend>
+              </fieldset>
+              <ul>
+                <li>
+                  <label for="searchForm_hex_string">Hex String</label>
+                  <input id ="searchForm_hex_string" type="text">
+                </li>
+              </ul>
+              <button type="submit">Search</button>
+            </form>
           </div>
         </div>
         <div class="header_view">
@@ -54,6 +65,6 @@
     </div>
 
     <div class="footer"></div>
-    <script src="logic_and_style/index.js"></script>
+    <script src="logic_and_style/index_wip.js"></script>
   </body>
 </html>

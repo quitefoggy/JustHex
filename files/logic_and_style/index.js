@@ -1,15 +1,18 @@
 `use strict`
 
+//const fs = require('node:fs');
+
 const saveFile = JSON.parse(localStorage.getItem("JustHex_saveFile")) || {
     row_length:16,
     group_size:4
 };
 localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
 
-let file_ids = {};
-let is_file_present = false;
+
+let file_ids = {};  
 
 const fileInput = document.getElementById("openButton");
+const search_form = document.getElementById("searchForm");
 const settings_form = document.getElementById("settingsForm");
 document.getElementById("rowSize").value = String(saveFile.row_length);
 document.getElementById("byteGroupSize").value = String(saveFile.group_size);
@@ -17,6 +20,7 @@ document.getElementById("byteGroupSize").value = String(saveFile.group_size);
 const container = document.querySelector(".wrapper");
 const fileSelector = document.getElementById("opened_files_list");
 
+search_form.addEventListener("submit",searchInFile);
 settings_form.addEventListener("submit",updateSettings);
 fileInput.addEventListener("change",handleFile);
 
@@ -188,7 +192,7 @@ function outputFile(buffer, place){
     file_contents_text.className = "file_Content";
     file_contents_text.contentEditable = "plaintext-only";
 
-    const data = new DataView(buffer) || byte_buffer;
+    const data = new DataView(buffer);
     const iterator = {
         idx:0,
         next(){
@@ -258,8 +262,8 @@ function window_toggle(file_ID){
 function add_My_Events(){
     for (my_key in file_ids){
         if (file_ids.hasOwnProperty(my_key)){
-            let my_val = file_ids[my_key];
-            document.getElementById(my_val+"_btn").addEventListener("click",window_toggle(file_ids[my_key]));
+            //let my_val = file_ids[my_key];
+            document.getElementById(my_key+"_btn").addEventListener("click",window_toggle(my_key));
         }
     }
 }
@@ -268,17 +272,31 @@ function add_My_Events(){
 function convert_list_into_queue(item_list){
     const out_queue = new Queue();
     for (item of item_list){
-        console.log(`item: ${item}`);
+        //console.log(`item: ${item}`);
         out_queue.push(item);
     };
-    console.log(out_queue);
+    //console.log(out_queue);
     return out_queue;
+}
+
+function add_file_to_search_list(file_id,filename){
+    const search_fieldset = document.getElementById("searchFormFieldset");
+    let rad_input = document.createElement("input");
+    rad_input.type = "radio";
+    rad_input.id = file_id+"_rad";
+    rad_input.value = file_id;
+    rad_input.name = "files";
+    let rad_label = document.createElement("label");
+    rad_label.for = rad_input.id;
+    rad_label.textContent = filename;
+    search_fieldset.appendChild(rad_input);
+    search_fieldset.appendChild(rad_label);
 }
 
 function handleFile(event){
     const file_List = event.target.files;
     //console.log(file_List);
-    const file_queue = convert_list_into_queue(event.target.files);
+    const file_queue = convert_list_into_queue(file_List);
     //console.log(file_queue.first);
     let input_que_length = file_queue.length;
 
@@ -288,8 +306,9 @@ function handleFile(event){
         //console.log(a_file.name);
         let filename = a_file.name;
         //console.log(filename);
-        file_ids[filename] = id_gen.next().value;
-        //console.log(file_ids[filename]);
+        let cur_file_id = id_gen.next().value;
+        file_ids[cur_file_id] = filename;
+        //console.log(file_ids[cur_file_id]);
 
         let file_div = document.createElement("div");
         file_div.className = "dropdown";                //used to position insides
@@ -297,13 +316,13 @@ function handleFile(event){
         let cur_file_btn = document.createElement("button");
         cur_file_btn.textContent = filename;
         cur_file_btn.className = "Headerbtn file_list_button";
-        cur_file_btn.id = file_ids[filename]+"_btn";
-        cur_file_btn.setAttribute("onclick",`window_toggle('${file_ids[filename]}')`);
+        cur_file_btn.id = cur_file_id+"_btn";
+        cur_file_btn.setAttribute("onclick",`window_toggle('${cur_file_id}')`);
         //console.log(cur_file_btn.onclick);
 
         let cur_file_div = document.createElement("div");
         cur_file_div.className = "file_Content_Bkg main_area";    //thing that will get hidden
-        cur_file_div.id = file_ids[filename];
+        cur_file_div.id = cur_file_id;
 
         let cur_file_ul = document.createElement("ul");
         cur_file_ul.className = "file_Content_Bkg_ul";
@@ -313,6 +332,7 @@ function handleFile(event){
         container.appendChild(cur_file_div);
 
         fileSelector.appendChild(file_div); 
+        add_file_to_search_list(cur_file_id,filename);
 
         is_file_present = true; 
         const reader = new FileReader();
@@ -323,6 +343,7 @@ function handleFile(event){
             //console.log(reader.result);
             //console.log(byte_buffer);
             outputFile(reader.result, cur_file_ul);
+            console.log(file_ids);
         };
         reader.onerror = () => {
             console.log("Error reading the file. Please try again.");
@@ -330,6 +351,169 @@ function handleFile(event){
         reader.readAsArrayBuffer(a_file);
     }
     //add_My_Events();
+}
+
+//NOT FINISHED!!!!
+function handleFileStream(event){
+    const file_List = event.target.files;
+    //console.log(file_List);
+    const file_queue = convert_list_into_queue(file_List);
+    //console.log(file_queue.first);
+    let input_que_length = file_queue.length;
+
+    for (let i=0; i<input_que_length; i++){
+        const a_file = file_queue.shift();
+        //console.log(a_file);
+        let filename = a_file.name;
+        //console.log(filename);
+        let cur_file_id = id_gen.next().value;
+        file_ids[cur_file_id] = filename;
+
+        let file_div = document.createElement("div");
+        file_div.className = "dropdown";                //used to position insides
+
+        let cur_file_btn = document.createElement("button");
+        cur_file_btn.textContent = filename;
+        cur_file_btn.className = "Headerbtn file_list_button";
+        cur_file_btn.id = cur_file_id+"_btn";
+        cur_file_btn.setAttribute("onclick",`window_toggle('${cur_file_id}')`);
+
+        let cur_file_div = document.createElement("div");
+        cur_file_div.className = "file_Content_Bkg main_area";    //thing that will get hidden
+        cur_file_div.id = cur_file_id;
+
+        let cur_file_ul = document.createElement("ul");
+        cur_file_ul.className = "file_Content_Bkg_ul";
+        cur_file_div.appendChild(cur_file_ul);
+
+        file_div.appendChild(cur_file_btn);
+        container.appendChild(cur_file_div);
+
+        fileSelector.appendChild(file_div); 
+
+        const readable = fs.createReadStream(a_file);
+        let idx = 0;
+
+        cur_file_ul.textContent='';
+        const file_contents_byte = document.createElement("fileContent_byte");
+        file_contents_byte.className = "file_Content";
+        file_contents_byte.contentEditable = "plaintext-only";
+        const file_contents_text = document.createElement("fileContent_text");
+        file_contents_text.className = "file_Content";
+        file_contents_text.contentEditable = "plaintext-only";
+
+        let row_array_byte = [];
+        let row_array_text = [];
+        let li_array = [];
+
+        readable.on('data',(chunk)=>{
+            console.log(chunk);
+            if (idx % saveFile.row_length ==0){
+                let ul_byte = document.createElement("ul"); //рядок байтів
+                let ul_text = document.createElement("ul"); //рядок тексту
+                ul_byte.className = "file_ul";
+                row_array_byte.push(ul_byte);
+                row_array_text.push(ul_text);
+            };
+            if (idx % saveFile.group_size ==0){
+                let li = document.createElement("li"); //елемент рядка
+                li.className = "file_li";
+                row_array_byte[row_array_byte.length-1].appendChild(li);
+                li_array.push(li);
+            };
+            //console.log(byte,parseInt(byte,16));
+            let converted_text = "";
+            if (chunk!="0A"){
+                converted_text = String.fromCharCode(parseInt(chunk,16));
+            } else {
+                converted_text = ".";
+            }
+            row_array_text[row_array_text.length-1].textContent+=converted_text;
+            li_array[li_array.length-1].textContent+=chunk;
+            file_contents_byte.appendChild(row_array_byte[row_array_byte.length-1]);
+            file_contents_text.appendChild(row_array_text[row_array_text.length-1]);
+            idx=idx+1;
+        });
+        readable.on('end',()=>{
+            console.log(`${filename}: end`);
+            cur_file_ul.appendChild(file_contents_byte);
+            cur_file_ul.appendChild(file_contents_text);
+            if (readable.destroyed != true){
+                readable.destroy();
+            }
+        });
+        readable.on('error',(error)=>{
+            console.log(error);
+            if (readable.destroyed != true){
+                readable.destroy();
+            }
+        });
+    }
+    //add_My_Events();
+}
+
+//to be implemented...
+function getCaretCharacterOffsetWithin(element) {
+    var caretOffset = 0;
+    var doc = element.ownerDocument || element.document;
+    var win = doc.defaultView || doc.parentWindow;
+    var sel;
+    if (typeof win.getSelection != "undefined") {
+        sel = win.getSelection();
+        if (sel.rangeCount > 0) {
+            var range = win.getSelection().getRangeAt(0);
+            var preCaretRange = range.cloneRange();
+            preCaretRange.selectNodeContents(element);
+            preCaretRange.setEnd(range.endContainer, range.endOffset);
+            caretOffset = preCaretRange.toString().length;
+        }
+    } else if ( (sel = doc.selection) && sel.type != "Control") {
+        var textRange = sel.createRange();
+        var preCaretTextRange = doc.body.createTextRange();
+        preCaretTextRange.moveToElementText(element);
+        preCaretTextRange.setEndPoint("EndToEnd", textRange);
+        caretOffset = preCaretTextRange.text.length;
+    }
+    return caretOffset;
+}
+
+async function find_the_piece_of_data(input_string, search_string){
+    return input_string.search(search_string);
+}
+
+
+//OPFS?
+//origin private file system?
+
+//додати справжню взаємодію з async функцією...
+
+//патерн: проксі, __не саме проксі__
+
+
+async function searchInFile(event){
+    event.preventDefault();
+    const searched_hex_string = document.getElementById("searchForm_hex_string").value;
+    const search_form_data = new FormData(search_form);
+    let searched_file_id = "";
+    for (const entry of search_form_data){
+        searched_file_id = entry[1];
+    }
+    if (searched_file_id===""){
+        //make it abort here...
+    }
+    const opened_file = document.getElementById(searched_file_id);
+    //console.log(opened_file,searched_file_id);
+
+    const byte_cont = String(opened_file.getElementsByTagName("fileContent_byte")[0].innerText).replace(/\n/g,'');
+    
+    //console.log(byte_cont,searched_hex_string);
+    let result = ""; 
+    try{
+        result = await find_the_piece_of_data(byte_cont,searched_hex_string)
+    } catch (err){
+        console.log(`Error happened while searching file. \nThe error: ${err}`)
+    }
+    console.log(result);
 }
 
 function clear_my_localStorage(){
