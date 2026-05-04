@@ -8,9 +8,9 @@ const saveFile = JSON.parse(localStorage.getItem("JustHex_saveFile")) || {
 };
 localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
 
-
 let file_ids = {};  
 
+const remoteForm = document.getElementById("remoteForm");
 const fileInput = document.getElementById("openButton");
 const search_form = document.getElementById("searchForm");
 const settings_form = document.getElementById("settingsForm");
@@ -20,6 +20,7 @@ document.getElementById("byteGroupSize").value = String(saveFile.group_size);
 const container = document.querySelector(".wrapper");
 const fileSelector = document.getElementById("opened_files_list");
 
+remoteForm.addEventListener("submit",loadRemote);
 search_form.addEventListener("submit",searchInFile);
 settings_form.addEventListener("submit",updateSettings);
 fileInput.addEventListener("change",handleFile);
@@ -122,7 +123,6 @@ function updateSettings(event){
         document.getElementById("rowSize").value = document.getElementById("byteGroupSize").value;
     }
     //console.log({rowLength, groupSize});
-    
     saveFile.row_length = rowLength;
     saveFile.group_size = groupSize;
     localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
@@ -133,8 +133,8 @@ function updateSettings(event){
         let text_cont = String(file_ul.getElementsByTagName("fileContent_text")[0].innerText).replace(/\n/g,'');
         //console.log(byte_cont);
         //console.log(text_cont);
-        console.log(byte_cont.length/2, text_cont.length)
-        
+        console.log(byte_cont.length/2, text_cont.length);
+
         file_ul.textContent="";
         let file_contents_byte = document.createElement("fileContent_byte");
         file_contents_byte.className = "file_Content";
@@ -142,7 +142,6 @@ function updateSettings(event){
         let file_contents_text = document.createElement("fileContent_text");
         file_contents_text.className = "file_Content";
         file_contents_text.contentEditable = "true";
-
 
         let row_array_byte = [];
         let row_array_text = [];
@@ -198,7 +197,7 @@ function outputFile(buffer, place){
         next(){
             const done = this.idx>=data.byteLength;
             if (done){
-                return {done, value: null}
+                return {done, value: null};
             }
             return{
                 done,
@@ -477,9 +476,6 @@ function getCaretCharacterOffsetWithin(element) {
     return caretOffset;
 }
 
-async function find_the_piece_of_data(input_string, search_string){
-    return input_string.search(search_string);
-}
 
 
 //OPFS?
@@ -490,7 +486,74 @@ async function find_the_piece_of_data(input_string, search_string){
 //патерн: проксі, __не саме проксі__
 
 
-async function searchInFile(event){
+
+// THE ASYNC FUNCTION!! Yes, this finally has to be good....
+async function loadRemote(event) {
+    event.preventDefault();
+    const user_input_URL = document.getElementById("remoteForm_url_string").value;
+    const resp = await fetch(user_input_URL);
+    if (!resp.ok) throw new Error("Failed to load file!");
+    try{
+        temp_blob = await resp.blob();
+        temp_blob = await temp_blob.arrayBuffer();
+    } catch (error){
+        console.log(`temp_blob error: ${error}`)
+    }
+
+    let fileid = id_gen.next().value
+    let filename = "remote_" + fileid;
+    //console.log(filename);
+    let cur_file_id = fileid;
+    file_ids[cur_file_id] = filename;
+    //console.log(file_ids[cur_file_id]);
+
+    let file_div = document.createElement("div");
+    file_div.className = "dropdown"; //used to position insides
+
+    let cur_file_btn = document.createElement("button");
+    cur_file_btn.textContent = filename;
+    cur_file_btn.className = "Headerbtn file_list_button";
+    cur_file_btn.id = cur_file_id + "_btn";
+    cur_file_btn.setAttribute("onclick", `window_toggle('${cur_file_id}')`);
+    //console.log(cur_file_btn.onclick);
+
+    let cur_file_div = document.createElement("div");
+    cur_file_div.className = "file_Content_Bkg main_area"; //thing that will get hidden
+    cur_file_div.id = cur_file_id;
+
+    let cur_file_ul = document.createElement("ul");
+    cur_file_ul.className = "file_Content_Bkg_ul";
+    cur_file_div.appendChild(cur_file_ul);
+
+    file_div.appendChild(cur_file_btn);
+    container.appendChild(cur_file_div);
+
+    fileSelector.appendChild(file_div);
+    add_file_to_search_list(cur_file_id, filename);
+
+    is_file_present = true;
+    outputFile(temp_blob, cur_file_ul)
+
+    //img.src = doroCache.blobUrl;
+    //img.alt = "fallen-doro";
+    //img.onload = () => (img.classList = "loaded");
+    //doroCache.imgs.push(img);
+
+    //if (doroCache.imgs.length <= maxDoroCount) container.appendChild(img);
+    //else {
+    //  const button = document.querySelector("button");
+    //  button.textContent = "There are too many doros!";
+    //  button.style = "background-color:red";
+    //}
+}
+
+// NOT THE ASYNC FUNCTION!!!! or well,,,, not the good example of it
+
+async function find_the_piece_of_data(input_string, search_string) {
+    return input_string.search(search_string);
+}
+
+async function searchInFile(event) {
     event.preventDefault();
     const searched_hex_string = document.getElementById("searchForm_hex_string").value;
     const search_form_data = new FormData(search_form);
@@ -505,13 +568,12 @@ async function searchInFile(event){
     //console.log(opened_file,searched_file_id);
 
     const byte_cont = String(opened_file.getElementsByTagName("fileContent_byte")[0].innerText).replace(/\n/g,'');
-    
     //console.log(byte_cont,searched_hex_string);
     let result = ""; 
     try{
-        result = await find_the_piece_of_data(byte_cont,searched_hex_string)
+        result = await find_the_piece_of_data(byte_cont,searched_hex_string);
     } catch (err){
-        console.log(`Error happened while searching file. \nThe error: ${err}`)
+        console.log(`Error happened while searching file. \nThe error: ${err}`);
     }
     console.log(result);
 }

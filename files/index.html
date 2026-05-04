@@ -17,6 +17,18 @@
         <div class="header_file">
           <button class="Headerbtn">File</button>
           <div class="header_content">
+            <form id="remoteForm">
+              <fieldset id="remoteFormFieldset">
+                <legend>Load from remote</legend>
+                <ul>
+                  <li>
+                    <label for="remoteForm_url_string">File URL</label>
+                    <input id ="remoteForm_url_string" type="text">
+                  </li>
+                </ul>
+                <button type="submit">Reach</button>
+              </fieldset>              
+            </form>
             <input type="file" multiple id="openButton" class="open_button" />
           </div>
         </div>
