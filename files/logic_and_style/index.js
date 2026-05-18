@@ -1,7 +1,5 @@
 `use strict`
 
-//const fs = require('node:fs');
-
 const saveFile = JSON.parse(localStorage.getItem("JustHex_saveFile")) || {
     row_length:16,
     group_size:4
@@ -23,7 +21,7 @@ const fileSelector = document.getElementById("opened_files_list");
 remoteForm.addEventListener("submit",loadRemote);
 search_form.addEventListener("submit",searchInFile);
 settings_form.addEventListener("submit",updateSettings);
-fileInput.addEventListener("change",handleFile);
+fileInput.addEventListener("change",handleFileStream);
 
 class Queue {
     constructor(){
@@ -301,13 +299,9 @@ function handleFile(event){
 
     for (let i=0; i<input_que_length; i++){
         const a_file = file_queue.shift();
-        //console.log(a_file);
-        //console.log(a_file.name);
         let filename = a_file.name;
-        //console.log(filename);
         let cur_file_id = id_gen.next().value;
         file_ids[cur_file_id] = filename;
-        //console.log(file_ids[cur_file_id]);
 
         let file_div = document.createElement("div");
         file_div.className = "dropdown";                //used to position insides
@@ -317,7 +311,6 @@ function handleFile(event){
         cur_file_btn.className = "Headerbtn file_list_button";
         cur_file_btn.id = cur_file_id+"_btn";
         cur_file_btn.setAttribute("onclick",`window_toggle('${cur_file_id}')`);
-        //console.log(cur_file_btn.onclick);
 
         let cur_file_div = document.createElement("div");
         cur_file_div.className = "file_Content_Bkg main_area";    //thing that will get hidden
@@ -336,24 +329,17 @@ function handleFile(event){
         is_file_present = true; 
         const reader = new FileReader();
         reader.onload = () => {
-            //console.log("sent");
-            //console.log(reader.result.length);
-            //console.log(reader.result.byteLength);
-            //console.log(reader.result);
-            //console.log(byte_buffer);
             outputFile(reader.result, cur_file_ul);
-            console.log(file_ids);
         };
         reader.onerror = () => {
             console.log("Error reading the file. Please try again.");
         };
         reader.readAsArrayBuffer(a_file);
     }
-    //add_My_Events();
 }
 
-//NOT FINISHED!!!!
-function handleFileStream(event){
+//FINISHED!!!!
+async function handleFileStream(event){
     const file_List = event.target.files;
     //console.log(file_List);
     const file_queue = convert_list_into_queue(file_List);
@@ -362,9 +348,7 @@ function handleFileStream(event){
 
     for (let i=0; i<input_que_length; i++){
         const a_file = file_queue.shift();
-        //console.log(a_file);
         let filename = a_file.name;
-        //console.log(filename);
         let cur_file_id = id_gen.next().value;
         file_ids[cur_file_id] = filename;
 
@@ -389,66 +373,27 @@ function handleFileStream(event){
         container.appendChild(cur_file_div);
 
         fileSelector.appendChild(file_div); 
+        add_file_to_search_list(cur_file_id,filename);
 
-        const readable = fs.createReadStream(a_file);
-        let idx = 0;
-
-        cur_file_ul.textContent='';
-        const file_contents_byte = document.createElement("fileContent_byte");
-        file_contents_byte.className = "file_Content";
-        file_contents_byte.contentEditable = "plaintext-only";
-        const file_contents_text = document.createElement("fileContent_text");
-        file_contents_text.className = "file_Content";
-        file_contents_text.contentEditable = "plaintext-only";
-
-        let row_array_byte = [];
-        let row_array_text = [];
-        let li_array = [];
-
-        readable.on('data',(chunk)=>{
-            console.log(chunk);
-            if (idx % saveFile.row_length ==0){
-                let ul_byte = document.createElement("ul"); //рядок байтів
-                let ul_text = document.createElement("ul"); //рядок тексту
-                ul_byte.className = "file_ul";
-                row_array_byte.push(ul_byte);
-                row_array_text.push(ul_text);
-            };
-            if (idx % saveFile.group_size ==0){
-                let li = document.createElement("li"); //елемент рядка
-                li.className = "file_li";
-                row_array_byte[row_array_byte.length-1].appendChild(li);
-                li_array.push(li);
-            };
-            //console.log(byte,parseInt(byte,16));
-            let converted_text = "";
-            if (chunk!="0A"){
-                converted_text = String.fromCharCode(parseInt(chunk,16));
-            } else {
-                converted_text = ".";
+        const stream = a_file.stream();
+        const reader = stream.getReader();
+        let temp_array = [];
+        while (true){
+            try{
+                const {value, done} = await reader.read();
+                temp_array.push(value);
+                if (done) break;
+            } catch(error){
+                console.log(`Error reading from stream: \n${error}`);
+                alert(`Error reading from stream: \n${error}`);
+                stream.cancel();
+                return;
             }
-            row_array_text[row_array_text.length-1].textContent+=converted_text;
-            li_array[li_array.length-1].textContent+=chunk;
-            file_contents_byte.appendChild(row_array_byte[row_array_byte.length-1]);
-            file_contents_text.appendChild(row_array_text[row_array_text.length-1]);
-            idx=idx+1;
-        });
-        readable.on('end',()=>{
-            console.log(`${filename}: end`);
-            cur_file_ul.appendChild(file_contents_byte);
-            cur_file_ul.appendChild(file_contents_text);
-            if (readable.destroyed != true){
-                readable.destroy();
-            }
-        });
-        readable.on('error',(error)=>{
-            console.log(error);
-            if (readable.destroyed != true){
-                readable.destroy();
-            }
-        });
+        }
+        let new_temp_array = await new Blob(temp_array).arrayBuffer();
+        //new Uint8Array(new_temp_array).buffer
+        outputFile(new_temp_array,cur_file_ul);
     }
-    //add_My_Events();
 }
 
 //to be implemented...
@@ -481,23 +426,23 @@ function getCaretCharacterOffsetWithin(element) {
 //OPFS?
 //origin private file system?
 
-//додати справжню взаємодію з async функцією...
-
 //патерн: проксі, __не саме проксі__
 
-
+//https://dl.myminifactory.com/object-assets/579fcf75b4ab7/images/720X720-667a372c7eb5702264afa357e59295e1e1b50441.jpg
 
 // THE ASYNC FUNCTION!! Yes, this finally has to be good....
 async function loadRemote(event) {
     event.preventDefault();
     const user_input_URL = document.getElementById("remoteForm_url_string").value;
-    const resp = await fetch(user_input_URL);
-    if (!resp.ok) throw new Error("Failed to load file!");
     try{
-        temp_blob = await resp.blob();
+        const resp = await fetch(user_input_URL);
+        if (!resp.ok) throw new Error("Failed to load file!");
+        let temp_blob = await resp.blob();
         temp_blob = await temp_blob.arrayBuffer();
     } catch (error){
-        console.log(`temp_blob error: ${error}`)
+        console.log(`Error while fetching file: ${error}`);
+        alert(`Error while fetching file: ${error}`);
+        return;
     }
 
     let fileid = id_gen.next().value
@@ -562,7 +507,8 @@ async function searchInFile(event) {
         searched_file_id = entry[1];
     }
     if (searched_file_id===""){
-        //make it abort here...
+        alert("You forgot to select file!");
+        return;
     }
     const opened_file = document.getElementById(searched_file_id);
     //console.log(opened_file,searched_file_id);
