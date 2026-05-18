@@ -20,9 +20,16 @@
   transition: all ease-in 1s;
 }
 
-.header li{
+.logo_li{
   display: flex;
   justify-content: center;
+}
+
+.submenu_deco{
+  margin: 5px;
+  display: flex;
+  flex-direction: row;
+  justify-content:left;
 }
 
 
@@ -52,6 +59,7 @@
 
 /* Dropdown Content (Hidden by Default) */
 .header_content {
+  padding: 5px;
   display: none;
   position: absolute;
   background-color: hsl(0, 0%, 30%);
@@ -60,7 +68,28 @@
   z-index: 2;
 }
 
-.header_content input {
+.open_button{
+  margin: 0rem 0em;
+  padding: 7px;
+  background-color: hsl(0, 0%, 40%);
+  width:auto;
+
+  color: hsl(0, 0%, 0%);
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content:space-around;
+
+  transition: all ease-in 0.1s;
+}
+
+.open_button:hover {
+  cursor: pointer;
+  background-color: hsl(39, 100%, 40%);
+}
+
+.header_content_input {
   margin: 0rem 0em;
   padding: 7px;
   background-color: hsl(0, 0%, 40%);
@@ -77,11 +106,11 @@
 }
 
 /* Change color of dropdown links on hover */
-.header_content input:hover {
+.header_content_input:hover {
   cursor: pointer;
   background-color: hsl(19, 100%, 36%);
 }
-.header_content input:active {background-color: darkorange;}
+.header_content_input:active {background-color: darkorange;}
 
 /* Show the dropdown menu on hover */
 .header_file:hover .header_content {display: block;}

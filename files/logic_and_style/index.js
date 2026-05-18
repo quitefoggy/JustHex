@@ -283,11 +283,15 @@ function add_file_to_search_list(file_id,filename){
     rad_input.id = file_id+"_rad";
     rad_input.value = file_id;
     rad_input.name = "files";
+    rad_input.className = "open_button";
     let rad_label = document.createElement("label");
     rad_label.for = rad_input.id;
     rad_label.textContent = filename;
-    search_fieldset.appendChild(rad_input);
-    search_fieldset.appendChild(rad_label);
+    let li_item = document.createElement("li");
+    li_item.className = "submenu_deco";
+    li_item.appendChild(rad_input);
+    li_item.appendChild(rad_label);
+    search_fieldset.appendChild(li_item);
 }
 
 function handleFile(event){
@@ -522,6 +526,11 @@ async function searchInFile(event) {
         console.log(`Error happened while searching file. \nThe error: ${err}`);
     }
     console.log(result);
+    if (result!=-1){
+        alert(`Byte offset: ${result}`);
+    } else{
+        alert(`No matches int the file!`);
+    };
 }
 
 function clear_my_localStorage(){

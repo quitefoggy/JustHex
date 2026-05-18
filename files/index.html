@@ -10,7 +10,7 @@
   <body>
     <div class="header">
       <ul>
-        <li>JustHex</li>
+        <li class="logo_li">JustHex</li>
       </ul>
 
       <ul class="header_menu">
@@ -21,15 +21,15 @@
               <fieldset id="remoteFormFieldset">
                 <legend>Load from remote</legend>
                 <ul>
-                  <li>
+                  <li class="submenu_deco">
                     <label for="remoteForm_url_string">File URL</label>
-                    <input id ="remoteForm_url_string" type="text">
+                    <input id ="remoteForm_url_string" type="text" class="header_content_input">
                   </li>
                 </ul>
-                <button type="submit">Reach</button>
+                <button type="submit" class="open_button">Reach</button>
               </fieldset>              
             </form>
-            <input type="file" multiple id="openButton" class="open_button" />
+            <input type="file" multiple id="openButton" class="header_content_input" />
           </div>
         </div>
         <div class="header_edit">
@@ -40,12 +40,12 @@
                 <legend>Choose file</legend>
               </fieldset>
               <ul>
-                <li>
+                <li class="submenu_deco">
                   <label for="searchForm_hex_string">Hex String</label>
-                  <input id ="searchForm_hex_string" type="text">
+                  <input id ="searchForm_hex_string" type="text" class="header_content_input">
                 </li>
               </ul>
-              <button type="submit">Search</button>
+              <button type="submit" class="open_button">Search</button>
             </form>
           </div>
         </div>
@@ -56,16 +56,16 @@
               <fieldset id="searchFormFieldset">
                 <legend>Settings</legend>
                 <ul>
-                <li>
+                <li class="submenu_deco">
                   <label for="rowSize">Row size:</label>
-                  <input id ="rowSize" type="number">
+                  <input id ="rowSize" type="number" class="header_content_input">
                 </li>
-                <li>
+                <li class="submenu_deco">
                   <label for="byteGroupSize">Byte Group size:</label>
-                  <input id ="byteGroupSize" type="number">
+                  <input id ="byteGroupSize" type="number" class="header_content_input">
                 </li>
               </ul>
-              <button type="submit">Save settings</button>
+              <button type="submit" class="open_button">Save settings</button>
               </fieldset>
               
             </form>
