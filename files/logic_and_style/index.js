@@ -10,6 +10,7 @@ let file_ids = {};
 
 const remoteForm = document.getElementById("remoteForm");
 const fileInput = document.getElementById("openButton");
+const download_form = document.getElementById("downloadForm");
 const search_form = document.getElementById("searchForm");
 const settings_form = document.getElementById("settingsForm");
 document.getElementById("rowSize").value = String(saveFile.row_length);
@@ -19,6 +20,7 @@ const container = document.querySelector(".wrapper");
 const fileSelector = document.getElementById("opened_files_list");
 
 remoteForm.addEventListener("submit",loadRemote);
+download_form.addEventListener("submit",download_selected_file);
 search_form.addEventListener("submit",searchInFile);
 settings_form.addEventListener("submit",updateSettings);
 fileInput.addEventListener("change",handleFileStream);
@@ -180,11 +182,16 @@ function correct_length(input_string){
     }
 }
 
+function filter_byte_inputs(e){
+    console.log(e.target.value);
+}
+
 function outputFile(buffer, place){
     place.textContent='';
     const file_contents_byte = document.createElement("fileContent_byte");
     file_contents_byte.className = "file_Content";
     file_contents_byte.contentEditable = "plaintext-only";
+    file_contents_byte.addEventListener("input",filter_byte_inputs);
     const file_contents_text = document.createElement("fileContent_text");
     file_contents_text.className = "file_Content";
     file_contents_text.contentEditable = "plaintext-only";
@@ -277,7 +284,7 @@ function convert_list_into_queue(item_list){
 }
 
 function add_file_to_search_list(file_id,filename){
-    const search_fieldset = document.getElementById("searchFormFieldset");
+    const search_fieldset = document.getElementById("selectFileFieldset");
     let rad_input = document.createElement("input");
     rad_input.type = "radio";
     rad_input.id = file_id+"_rad";
@@ -425,7 +432,43 @@ function getCaretCharacterOffsetWithin(element) {
     return caretOffset;
 }
 
+function download_selected_file(event){
+    event.preventDefault();
+    const download_form_data = new FormData(download_form);
+    let download_file_id = "";
+    for (const entry of download_form_data){
+        download_file_id = entry[1];
+    }
+    if (download_file_id===""){
+        alert("You forgot to select file!");
+        return;
+    }
+    const opened_file = document.getElementById(download_file_id);
+    //console.log(opened_file,searched_file_id);
 
+    const byte_cont = String(opened_file.getElementsByTagName("fileContent_byte")[0].innerText).replace(/\n/g,'');
+    //console.log(byte_cont,searched_hex_string);
+    const allowed_chars = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f","A","B","C","D","E","F"]
+    const generated_regex = new RegExp(`[^${allowed_chars}]`,'g');
+    let final_string = byte_cont.replace(generated_regex,"");
+    let remainder_before_changes = final_string.length%2;
+    if (remainder_before_changes!=0){
+        for (let i = 0; i<remainder_before_changes;i++){
+            final_string=final_string+"0";
+        }
+    }
+    const byte_Array = new Uint8Array(
+        final_string.match(/.{2}/g).map(byte => parseInt(byte,16))
+    );
+    //const byteData = new TextEncoder().encode(byte_Array);
+    const my_blob = new Blob([byte_Array],{type: "binary/plain"});
+    const url = URL.createObjectURL(my_blob);
+
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = file_ids[download_file_id];
+    a.click()
+}
 
 //OPFS?
 //origin private file system?
