@@ -6,6 +6,9 @@ const saveFile = JSON.parse(localStorage.getItem("JustHex_saveFile")) || {
 };
 localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
 
+const allowed_chars = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f","A","B","C","D","E","F"]
+const generated_regex = new RegExp(`[^${allowed_chars}]`,'g');
+
 let file_ids = {};  
 
 const remoteForm = document.getElementById("remoteForm");
@@ -83,26 +86,53 @@ class Queue {
         this.first = element;
         this.length+=1;
     }
+}
 
-    //{prev:last, next:{prev:last, next:{prev:last, next:null, item}, item}, item}
+function redraw_files(){
+    let all_files = Array.from(document.getElementsByClassName("file_Content_Bkg_ul"));
+    for (file_ul of all_files){
+        let byte_cont = String(file_ul.getElementsByTagName("fileContent_byte")[0].textContent).replace(/\n/g,'');
+        let text_cont = String(file_ul.getElementsByTagName("fileContent_text")[0].textContent).replace(/\n/g,'');
+        //console.log(byte_cont);
+        //console.log(text_cont);
+        //console.log(byte_cont.length/2, text_cont.length);
 
-    //ISN'T (and won't be) FINISHED
-    //enqueue(item, priority, element){
-    //    priority = Number(priority);
-    //    while(priority>0){
-    //        let element = this.first;
-    //        if (element){
-    //            let the_next = element.next;
-    //            if (the_next){
-    //                priority-=1;
-    //                this.enqueue(item, priority, element);
-    //            } else{
-    //                let result = this.unshit(item);
-    //                if (result) return new Error("Queue is full")
-    //            }
-    //        } else this.unshit(item);
-    //    }
-    //}
+        file_ul.textContent="";
+        let file_contents_byte = document.createElement("fileContent_byte");
+        file_contents_byte.className = "file_Content";
+        file_contents_byte.contentEditable = "true";
+        file_contents_byte.addEventListener("input",showCaretPos);
+        let file_contents_text = document.createElement("fileContent_text");
+        file_contents_text.className = "file_Content";
+        file_contents_text.contentEditable = "true";
+
+        let row_array_byte = [];
+        let row_array_text = [];
+        let li_array = [];
+        for (let i = 0; i<byte_cont.length; i=i+2){
+            //console.log(i,i+1,i/2);
+            if ((i/2) % saveFile.row_length ==0){
+                let ul_byte = document.createElement("ul"); //рядок байтів
+                let ul_text = document.createElement("ul"); //рядок тексту
+                ul_byte.className = "file_ul";
+                row_array_byte.push(ul_byte);
+                row_array_text.push(ul_text);
+            };
+            if ((i/2) % saveFile.group_size ==0){
+                let li = document.createElement("li"); //елемент рядка
+                li.className = "file_li";
+                row_array_byte[row_array_byte.length-1].appendChild(li);
+                li_array.push(li);
+            };
+            //console.log(byte,parseInt(byte,16));
+            row_array_text[row_array_text.length-1].textContent+=text_cont[i/2];
+            li_array[li_array.length-1].textContent+=byte_cont[i]+byte_cont[i+1];
+            file_contents_byte.appendChild(row_array_byte[row_array_byte.length-1]);
+            file_contents_text.appendChild(row_array_text[row_array_text.length-1]);
+        };
+        file_ul.appendChild(file_contents_byte);
+        file_ul.appendChild(file_contents_text);
+    }
 }
 
 function updateSettings(event){
@@ -126,51 +156,7 @@ function updateSettings(event){
     saveFile.row_length = rowLength;
     saveFile.group_size = groupSize;
     localStorage.setItem("JustHex_saveFile",JSON.stringify(saveFile));
-
-    let all_files = Array.from(document.getElementsByClassName("file_Content_Bkg_ul"));
-    for (file_ul of all_files){
-        let byte_cont = String(file_ul.getElementsByTagName("fileContent_byte")[0].innerText).replace(/\n/g,'');
-        let text_cont = String(file_ul.getElementsByTagName("fileContent_text")[0].innerText).replace(/\n/g,'');
-        //console.log(byte_cont);
-        //console.log(text_cont);
-        console.log(byte_cont.length/2, text_cont.length);
-
-        file_ul.textContent="";
-        let file_contents_byte = document.createElement("fileContent_byte");
-        file_contents_byte.className = "file_Content";
-        file_contents_byte.contentEditable = "true";
-        let file_contents_text = document.createElement("fileContent_text");
-        file_contents_text.className = "file_Content";
-        file_contents_text.contentEditable = "true";
-
-        let row_array_byte = [];
-        let row_array_text = [];
-        let li_array = [];
-        for (let i = 0; i<byte_cont.length; i=i+2){
-            console.log(i,i+1,i/2);
-            if ((i/2) % saveFile.row_length ==0){
-                let ul_byte = document.createElement("ul"); //рядок байтів
-                let ul_text = document.createElement("ul"); //рядок тексту
-                ul_byte.className = "file_ul";
-                row_array_byte.push(ul_byte);
-                row_array_text.push(ul_text);
-            };
-            if ((i/2) % saveFile.group_size ==0){
-                let li = document.createElement("li"); //елемент рядка
-                li.className = "file_li";
-                row_array_byte[row_array_byte.length-1].appendChild(li);
-                li_array.push(li);
-            };
-            //console.log(byte,parseInt(byte,16));
-            row_array_text[row_array_text.length-1].textContent+=text_cont[i/2];
-            li_array[li_array.length-1].textContent+=byte_cont[i]+byte_cont[i+1];
-            file_contents_byte.appendChild(row_array_byte[row_array_byte.length-1]);
-            file_contents_text.appendChild(row_array_text[row_array_text.length-1]);
-        };
-        file_ul.appendChild(file_contents_byte);
-        file_ul.appendChild(file_contents_text);
-        console.log('------------ next file ------------')
-    }
+    redraw_files();
 }
 
 
@@ -183,7 +169,71 @@ function correct_length(input_string){
 }
 
 function filter_byte_inputs(e){
-    console.log(e.target.value);
+    //console.log(e.detail);
+    const inp_char = e.detail["char"];
+    const inp_type = e.detail["type"];
+    const inp_caret = e.detail["caret"];
+    const inp_elem = e.detail["element"];
+    if (inp_elem==null){
+        console.log("How did we get here? Filter didn't work....");
+    };
+    if (inp_char){
+        if (allowed_chars.indexOf(inp_char)!=-1){
+            //console.log("pass");
+        } else {
+            let byte_cont = String(inp_elem.textContent).replace(/\n/g,'');
+            byte_cont = byte_cont.slice(0,inp_caret-1)+byte_cont.slice(inp_caret)
+            inp_elem.textContent=byte_cont;
+            redraw_files();
+        }
+    }
+}
+
+//  creating an EventTarget to process custom event 
+//  (whic is an overcomplicated way to call a function...)
+let byte_input_filter = new EventTarget();
+byte_input_filter.addEventListener("inbound_input", filter_byte_inputs);
+
+function getCaretCharacterOffsetWithin(element) {
+    var caretOffset = 0;
+    var doc = element.ownerDocument || element.document;
+    var win = doc.defaultView || doc.parentWindow;
+    var sel;
+    if (typeof win.getSelection != "undefined") {
+        sel = win.getSelection();
+        if (sel.rangeCount > 0) {
+            var range = win.getSelection().getRangeAt(0);
+            var preCaretRange = range.cloneRange();
+            preCaretRange.selectNodeContents(element);
+            preCaretRange.setEnd(range.endContainer, range.endOffset);
+            caretOffset = preCaretRange.toString().length;
+        }
+    } else if ( (sel = doc.selection) && sel.type != "Control") {
+        var textRange = sel.createRange();
+        var preCaretTextRange = doc.body.createTextRange();
+        preCaretTextRange.moveToElementText(element);
+        preCaretTextRange.setEndPoint("EndToEnd", textRange);
+        caretOffset = preCaretTextRange.text.length;
+    }
+    return caretOffset;
+}
+
+function showCaretPos(event) {
+    var el = document.activeElement;
+    if (el.tagName!="FILECONTENT_BYTE"){
+        return;
+    }
+    let given_key = event.data;
+    let given_type = event.inputType;
+    let caret_pos = getCaretCharacterOffsetWithin(el);
+    //console.log(event.data || event.inputType);
+
+    //  new custom event to carry values 
+    //  (yes, I could use simple function call, but that's not the task)
+    const inb_input = new CustomEvent("inbound_input",{
+        detail:{"char":given_key, "type":given_type, "caret":caret_pos, "element":el}
+    });
+    byte_input_filter.dispatchEvent(inb_input);
 }
 
 function outputFile(buffer, place){
@@ -191,7 +241,7 @@ function outputFile(buffer, place){
     const file_contents_byte = document.createElement("fileContent_byte");
     file_contents_byte.className = "file_Content";
     file_contents_byte.contentEditable = "plaintext-only";
-    file_contents_byte.addEventListener("input",filter_byte_inputs);
+    file_contents_byte.addEventListener("input",showCaretPos);
     const file_contents_text = document.createElement("fileContent_text");
     file_contents_text.className = "file_Content";
     file_contents_text.contentEditable = "plaintext-only";
@@ -263,16 +313,6 @@ function window_toggle(file_ID){
     document.getElementById(file_ID).classList.toggle("show");
 }
 
-function add_My_Events(){
-    for (my_key in file_ids){
-        if (file_ids.hasOwnProperty(my_key)){
-            //let my_val = file_ids[my_key];
-            document.getElementById(my_key+"_btn").addEventListener("click",window_toggle(my_key));
-        }
-    }
-}
-
-
 function convert_list_into_queue(item_list){
     const out_queue = new Queue();
     for (item of item_list){
@@ -284,21 +324,25 @@ function convert_list_into_queue(item_list){
 }
 
 function add_file_to_search_list(file_id,filename){
-    const search_fieldset = document.getElementById("selectFileFieldset");
-    let rad_input = document.createElement("input");
-    rad_input.type = "radio";
-    rad_input.id = file_id+"_rad";
-    rad_input.value = file_id;
-    rad_input.name = "files";
-    rad_input.className = "open_button";
-    let rad_label = document.createElement("label");
-    rad_label.for = rad_input.id;
-    rad_label.textContent = filename;
-    let li_item = document.createElement("li");
-    li_item.className = "submenu_deco";
-    li_item.appendChild(rad_input);
-    li_item.appendChild(rad_label);
-    search_fieldset.appendChild(li_item);
+    const search_fieldsets = document.querySelectorAll("[id='selectFileFieldset']");
+    //console.log(search_fieldsets);
+    search_fieldsets.forEach(search_fieldset =>{
+        //console.log(search_fieldset);
+        let rad_input = document.createElement("input");
+        rad_input.type = "radio";
+        rad_input.id = file_id+"_rad";
+        rad_input.value = file_id;
+        rad_input.name = "files";
+        rad_input.className = "open_button";
+        let rad_label = document.createElement("label");
+        rad_label.for = rad_input.id;
+        rad_label.textContent = filename;
+        let li_item = document.createElement("li");
+        li_item.className = "submenu_deco";
+        li_item.appendChild(rad_input);
+        li_item.appendChild(rad_label);
+        search_fieldset.appendChild(li_item);
+    });
 }
 
 function handleFile(event){
@@ -407,31 +451,6 @@ async function handleFileStream(event){
     }
 }
 
-//to be implemented...
-function getCaretCharacterOffsetWithin(element) {
-    var caretOffset = 0;
-    var doc = element.ownerDocument || element.document;
-    var win = doc.defaultView || doc.parentWindow;
-    var sel;
-    if (typeof win.getSelection != "undefined") {
-        sel = win.getSelection();
-        if (sel.rangeCount > 0) {
-            var range = win.getSelection().getRangeAt(0);
-            var preCaretRange = range.cloneRange();
-            preCaretRange.selectNodeContents(element);
-            preCaretRange.setEnd(range.endContainer, range.endOffset);
-            caretOffset = preCaretRange.toString().length;
-        }
-    } else if ( (sel = doc.selection) && sel.type != "Control") {
-        var textRange = sel.createRange();
-        var preCaretTextRange = doc.body.createTextRange();
-        preCaretTextRange.moveToElementText(element);
-        preCaretTextRange.setEndPoint("EndToEnd", textRange);
-        caretOffset = preCaretTextRange.text.length;
-    }
-    return caretOffset;
-}
-
 function download_selected_file(event){
     event.preventDefault();
     const download_form_data = new FormData(download_form);
@@ -446,10 +465,9 @@ function download_selected_file(event){
     const opened_file = document.getElementById(download_file_id);
     //console.log(opened_file,searched_file_id);
 
-    const byte_cont = String(opened_file.getElementsByTagName("fileContent_byte")[0].innerText).replace(/\n/g,'');
+    const byte_cont = String(opened_file.getElementsByTagName("fileContent_byte")[0].textContent).replace(/\n/g,'');
     //console.log(byte_cont,searched_hex_string);
-    const allowed_chars = ["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f","A","B","C","D","E","F"]
-    const generated_regex = new RegExp(`[^${allowed_chars}]`,'g');
+    
     let final_string = byte_cont.replace(generated_regex,"");
     let remainder_before_changes = final_string.length%2;
     if (remainder_before_changes!=0){
@@ -481,11 +499,12 @@ function download_selected_file(event){
 async function loadRemote(event) {
     event.preventDefault();
     const user_input_URL = document.getElementById("remoteForm_url_string").value;
+    let temp_blob_load_remote = ""
     try{
         const resp = await fetch(user_input_URL);
         if (!resp.ok) throw new Error("Failed to load file!");
-        let temp_blob = await resp.blob();
-        temp_blob = await temp_blob.arrayBuffer();
+        temp_blob_load_remote = await resp.blob();
+        temp_blob_load_remote = await temp_blob_load_remote.arrayBuffer();
     } catch (error){
         console.log(`Error while fetching file: ${error}`);
         alert(`Error while fetching file: ${error}`);
@@ -524,7 +543,7 @@ async function loadRemote(event) {
     add_file_to_search_list(cur_file_id, filename);
 
     is_file_present = true;
-    outputFile(temp_blob, cur_file_ul)
+    outputFile(temp_blob_load_remote, cur_file_ul)
 
     //img.src = doroCache.blobUrl;
     //img.alt = "fallen-doro";
@@ -539,13 +558,7 @@ async function loadRemote(event) {
     //}
 }
 
-// NOT THE ASYNC FUNCTION!!!! or well,,,, not the good example of it
-
-async function find_the_piece_of_data(input_string, search_string) {
-    return input_string.search(search_string);
-}
-
-async function searchInFile(event) {
+function searchInFile(event) {
     event.preventDefault();
     const searched_hex_string = document.getElementById("searchForm_hex_string").value;
     const search_form_data = new FormData(search_form);
@@ -560,11 +573,11 @@ async function searchInFile(event) {
     const opened_file = document.getElementById(searched_file_id);
     //console.log(opened_file,searched_file_id);
 
-    const byte_cont = String(opened_file.getElementsByTagName("fileContent_byte")[0].innerText).replace(/\n/g,'');
+    const byte_cont = String(opened_file.getElementsByTagName("fileContent_byte")[0].textContent).replace(/\n/g,'');
     //console.log(byte_cont,searched_hex_string);
     let result = ""; 
     try{
-        result = await find_the_piece_of_data(byte_cont,searched_hex_string);
+        result = byte_cont.search(searched_hex_string);
     } catch (err){
         console.log(`Error happened while searching file. \nThe error: ${err}`);
     }
@@ -572,7 +585,7 @@ async function searchInFile(event) {
     if (result!=-1){
         alert(`Byte offset: ${result}`);
     } else{
-        alert(`No matches int the file!`);
+        alert(`No matches in the file!`);
     };
 }
 
