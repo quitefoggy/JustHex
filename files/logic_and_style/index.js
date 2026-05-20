@@ -28,6 +28,45 @@ search_form.addEventListener("submit",searchInFile);
 settings_form.addEventListener("submit",updateSettings);
 fileInput.addEventListener("change",handleFileStream);
 
+
+//(`${Date.now()/1000} | `)
+/*
+0 - nothing
+1 - error
+2 - info
+3 - debug (but how??)
+*/
+let log_level = 2
+
+function my_implem_of_logging(fn){
+    return function (...args){
+        let error;
+        try{
+            if (log_level>=2){
+                console.log(`${Date.now()/1000} | called ${fn.name} with {${args}}`);
+            }
+            
+            console.log(`${Date.now()/1000} | called ${fn.name} with {${args}}`);
+            const fn_result = fn(args);
+
+            if (log_level>=2){
+                if (fn_result){    
+                    console.log(`${Date.now()/1000} | ${fn.name} returned "${fn_result}"`);
+                } else {
+                    console.log(`${Date.now()/1000} | ${fn.name} returned with nothing`);
+                }
+            }
+            
+            return fn_result; 
+        } catch(internal_error){
+            if (log_level>=1){
+                console.log(`${Date.now()/1000} | withLogs caught an error: ${internal_error}`);
+                alert(`Caught an error: \n${internal_error}`);
+            }
+        }
+    }
+}
+
 class Queue {
     constructor(){
         this.first = null;
@@ -428,7 +467,7 @@ async function handleFileStream(event){
         container.appendChild(cur_file_div);
 
         fileSelector.appendChild(file_div); 
-        add_file_to_search_list(cur_file_id,filename);
+        my_implem_of_logging(add_file_to_search_list(cur_file_id,filename));
 
         const stream = a_file.stream();
         const reader = stream.getReader();
